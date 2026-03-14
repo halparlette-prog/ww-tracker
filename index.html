@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>WW Fat Loss Tracker</title>
+
+<style>
+
+body{
+font-family:-apple-system;
+background:#f3f5fb;
+padding:16px;
+max-width:520px;
+margin:auto;
+}
+
+.header{
+font-size:28px;
+font-weight:700;
+margin-bottom:12px;
+}
+
+.card{
+background:white;
+padding:16px;
+border-radius:14px;
+margin-bottom:14px;
+box-shadow:0 6px 14px rgba(0,0,0,0.06);
+}
+
+input,select{
+width:100%;
+padding:10px;
+margin-top:6px;
+border-radius:8px;
+border:1px solid #ddd;
+font-size:16px;
+}
+
+button{
+width:100%;
+padding:12px;
+margin-top:10px;
+border-radius:10px;
+border:none;
+background:#6a40ff;
+color:white;
+font-size:16px;
+font-weight:600;
+}
+
+.progress{
+height:10px;
+background:#eee;
+border-radius:8px;
+margin-top:6px;
+overflow:hidden;
+}
+
+.bar{
+height:100%;
+background:#6a40ff;
+}
+
+.food{
+display:flex;
+justify-content:space-between;
+padding:10px;
+border-bottom:1px solid #eee;
+}
+
+.delete{
+background:#ff4d4d;
+border:none;
+color:white;
+padding:5px 10px;
+border-radius:6px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">WW Fat Loss Tracker</div>
+
+<div class="card">
+
+<label>Body Weight (lbs)</label>
+<input id="weight" type="number">
+
+<label>Activity Level</label>
+<select id="activity">
+<option value="12">Sedentary</option>
+<option value="14">Lightly Active</option>
+<option value="16">Moderately Active</option>
+<option value="18">Very Active</option>
+</select>
+
+<button onclick="calculateGoals()">Calculate Targets</button>
+
+<div>
+Daily Calories Target: <span id="calorieTarget">0</span>
+</div>
+
+<div>
+Protein Goal: <span id="proteinGoal">0</span> g
+</div>
+
+</div>
+
+<div class="card">
+
+<label>Daily Points Target</label>
+<input id="pointsTarget" type="number" value="23">
+
+<div>
+Points: <span id="points">0</span>
+<div class="progress"><div id="pointsBar" class="bar"></div></div>
+
+Remaining: <span id="remaining">0</span>
+</div>
+
+<br>
+
+<div>
+Protein: <span id="proteinTotal">0</span> g
+<div class="progress"><div id="proteinBar" class="bar"></div></div>
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>Add Food</h3>
+
+<input id="foodName" placeholder="Food name">
+
+<input id="cal" placeholder="Calories" type="number">
+<input id="fat" placeholder="Sat Fat (g)" type="number">
+<input id="sugar" placeholder="Sugar (g)" type="number">
+<input id="protein" placeholder="Protein (g)" type="number">
+
+<button onclick="addFood()">Add Food</button>
+
+</div>
+
+<div class="card">
+
+<h3>Today's Foods</h3>
+
+<div id="foodList"></div>
+
+<button onclick="resetDay()">Reset Day</button>
+
+</div>
+
+<script>
+
+let foods=[]
+
+let zeroFoods=[
+"apple","banana","berries","orange","grapes",
+"broccoli","spinach","carrots","pepper","tomato",
+"potato","sweet potato","corn",
+"egg","eggs",
+"chicken breast","turkey breast",
+"salmon","tuna","shrimp",
+"lentils","beans","chickpeas",
+"oats","oatmeal",
+"tofu","tempeh",
+"plain yogurt","greek yogurt"
+]
+
+function calculateGoals(){
+
+let weight=parseFloat(document.getElementById("weight").value)
+
+let activity=parseFloat(document.getElementById("activity").value)
+
+let maintenance=weight*activity
+
+let fatLossCalories=Math.round(maintenance-500)
+
+let proteinGoal=Math.round(weight*0.8)
+
+document.getElementById("calorieTarget").innerText=fatLossCalories
+
+document.getElementById("proteinGoal").innerText=proteinGoal
+
+}
+
+function calculatePoints(c,f,s,p){
+
+let pts=Math.round((c*0.0305)+(f*0.275)+(s*0.12)-(p*0.098))
+
+return pts<0?0:pts
+
+}
+
+function isZeroFood(name){
+
+name=name.toLowerCase()
+
+for(let f of zeroFoods){
+
+if(name.includes(f)) return true
+
+}
+
+return false
+
+}
+
+function addFood(){
+
+let name=document.getElementById("foodName").value||"Food"
+
+let protein=parseFloat(document.getElementById("protein").value)||0
+
+let points=0
+
+if(!isZeroFood(name)){
+
+let c=parseFloat(cal.value)||0
+let f=parseFloat(fat.value)||0
+let s=parseFloat(sugar.value)||0
+
+points=calculatePoints(c,f,s,protein)
+
+}
+
+foods.push({name,points,protein})
+
+renderFoods()
+
+}
+
+function renderFoods(){
+
+foodList.innerHTML=""
+
+foods.forEach((f,i)=>{
+
+let div=document.createElement("div")
+
+div.className="food"
+
+div.innerHTML=`
+${f.name} - ${f.points} pts (${f.protein}g)
+<button class="delete" onclick="deleteFood(${i})">X</button>
+`
+
+foodList.appendChild(div)
+
+})
+
+updateStats()
+
+}
+
+function deleteFood(i){
+
+foods.splice(i,1)
+
+renderFoods()
+
+}
+
+function updateStats(){
+
+let totalPoints=foods.reduce((sum,f)=>sum+f.points,0)
+let totalProtein=foods.reduce((sum,f)=>sum+f.protein,0)
+
+let target=parseInt(pointsTarget.value)
+
+points.innerText=totalPoints
+remaining.innerText=target-totalPoints
+
+proteinTotal.innerText=totalProtein
+
+pointsBar.style.width=(totalPoints/target*100)+"%"
+proteinBar.style.width=(totalProtein/parseInt(proteinGoal.innerText||1)*100)+"%"
+
+}
+
+function resetDay(){
+
+foods=[]
+
+renderFoods()
+
+}
+
+</script>
+
+</body>
+</html>
